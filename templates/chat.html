@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediConsult AI</title>
+    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo">
+            <i class="fa-solid fa-stethoscope"></i>
+            MediConsult
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">Knowledge Base</div>
+            
+            <div class="menu-item" onclick="sendQuickMessage('What are the symptoms of the common cold?')">
+                <i class="fa-solid fa-virus-covid"></i> Common symptoms
+            </div>
+            
+            <div class="menu-item" onclick="sendQuickMessage('How can I manage stress effectively?')">
+                <i class="fa-solid fa-brain"></i> Manage stress
+            </div>
+            
+            <div class="menu-item" onclick="sendQuickMessage('What foods are good for heart health?')">
+                <i class="fa-solid fa-heart-pulse"></i> Heart health
+            </div>
+            
+            <div class="menu-item" onclick="sendQuickMessage('Give me tips for better sleep hygiene')">
+                <i class="fa-solid fa-bed"></i> Sleep hygiene
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="chat-header">
+            <div class="header-info">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    SECURE & ONLINE
+                </div>
+            </div>
+            <div class="header-actions">
+                <i class="fa-solid fa-circle-info" style="color: #9ca3af; cursor: pointer;"></i>
+            </div>
+        </header>
+
+        <div id="chat-container" class="chat-area">
+            </div>
+
+        <div class="input-area">
+            <form id="input-form" class="input-container" onsubmit="event.preventDefault(); sendMessage();">
+                <input type="text" id="user-input" placeholder="Type your health question here..." autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+
+        // Get local time for message timestamps
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Handles sidebar button clicks
+        function sendQuickMessage(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+
+        // Creates and adds chat bubbles to the UI
+        function addMessage(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper', sender);
+
+            const avatarHTML = sender === 'bot' 
+                ? '<div class="avatar"><i class="fa-solid fa-stethoscope"></i></div>'
+                : '<div class="avatar"><i class="fa-solid fa-user"></i></div>';
+
+            const name = sender === 'bot' ? 'MEDICONSULT AI' : 'YOU';
+            const time = getCurrentTime();
+
+            // Prepare content (parse Markdown for bot responses)
+            let contentHtml = text;
+            if (sender === 'bot') {
+                contentHtml = marked.parse(text);
+            }
+
+            wrapper.innerHTML = `
+                ${avatarHTML}
+                <div class="message-content">
+                    <span class="meta-info">${name} • ${time}</span>
+                    <div class="text">${contentHtml}</div>
+                </div>
+            `;
+
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Sends the message to the Flask /get endpoint
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            userInput.value = '';
+
+            const formData = new FormData();
+            formData.append('msg', text);
+
+            fetch('/get', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                addMessage(data, 'bot');
+            })
+            .catch(err => {
+                console.error("Error:", err);
+                addMessage('Error: I could not connect to the medical server.', 'bot');
+            });
+        }
+
+        // Initial Greeting on Page Load
+        addMessage('Hello! I am your MediConsult assistant. How are you feeling today? Please share any symptoms or health questions you have.', 'bot');
+    </script>
+</body>
+</html>
