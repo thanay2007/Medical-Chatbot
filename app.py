@@ -13,11 +13,8 @@ app = Flask(__name__)
 
 # 1. Load API Keys
 load_dotenv()
-PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-
-os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
-os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+# We don't need to 'set' them; LangChain will find them automatically 
+# once you add them to the Render Dashboard.
 
 # 2. Download Embeddings (The "Translator")
 print("🧠 Loading Embeddings...")
